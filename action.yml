@@ -11,7 +11,6 @@ inputs:
     description: 'Namespace into which the License Manager pod(s) will be deployed'
     required: true
     type: string
-
   aws-ecr-uri:
     description: 'The URI for the AWS ECR repository. Example: 621672204142.dkr.ecr.us-east-2.amazonaws.com/openedx_mfe:latest'
     required: true
@@ -55,6 +54,10 @@ runs:
         eks-namespace: ${{ inputs.namespace }}
         eks-secret-name: mysql-license-manager
 
+    - name: Save tutor configuration
+      shell: bash
+      run: tutor config save
+
     # -----------------------------------------------------------------------------
     # retrieve license-manager-oauth secret from k8s, decode,
     # parse and push variables to the terminal. examples:
@@ -81,4 +84,3 @@ runs:
         tutor config save --set "LICENSE_MANAGER_DOCKER_IMAGE=${{ inputs.aws-ecr-uri }}" \
                           --set "LICENSE_MANAGER_HOST=${{ inputs.host }}" \
                           --set "LICENSE_MANAGER_LMS_HOST=${{ inputs.lms_host }}" \
-

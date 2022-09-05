@@ -47,7 +47,7 @@ jobs:
 
       # This action.
       - name: Enable tutor plugin - License Manager
-        uses: openedx-actions/tutor-enable-plugin-license-manager@v0.0.2
+        uses: openedx-actions/tutor-enable-plugin-license-manager@v0.0.3
         with:
           namespace: schoolofrock-global-prod
           aws-ecr-uri: 123456789012.dkr.ecr.us-east-2.amazonaws.com/license_manager:latest
