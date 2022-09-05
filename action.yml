@@ -7,6 +7,11 @@ branding:
   icon: 'cloud'
   color: 'orange'
 inputs:
+  namespace:
+    description: 'Namespace into which the License Manager pod(s) will be deployed'
+    required: true
+    type: string
+
   aws-ecr-uri:
     description: 'The URI for the AWS ECR repository. Example: 621672204142.dkr.ecr.us-east-2.amazonaws.com/openedx_mfe:latest'
     required: true
@@ -32,34 +37,47 @@ runs:
         pip install git+https://github.com/lpm0073/tutor-contrib-license-manager
         tutor plugins enable license_manager
 
-        # Plugin configuration
-        # -----------------------------------------------------------------------------
-        # retrieve mysql-license-manager secret from k8s, decode,
-        # parse and push variables to the terminal. examples:
-        #
-        #   TUTOR_LICENSE_MANAGER_MYSQL_DATABASE=webstepwisemathai_prod_lm
-        #   TUTOR_LICENSE_MANAGER_MYSQL_PASSWORD=zQi----secret------T5Q
-        #   TUTOR_LICENSE_MANAGER_MYSQL_USERNAME=webstepwisemathai_prod_lm
-        #   TUTOR_MYSQL_HOST=stepwisemath-global-live.cqkw93ffci2g.us-east-2.rds.amazonaws.com
-        #   TUTOR_MYSQL_PORT=3306
-        # -----------------------------------------------------------------------------
-        $(kubectl get secret mysql-license-manager -n stepwisemath-global-prod  -o json | jq  '.data | map_values(@base64d)' |   jq -r 'keys[] as $k | "export TUTOR_\($k|ascii_upcase)=\(.[$k])"')
+    # Plugin configuration
+    # -----------------------------------------------------------------------------
+    # retrieve mysql-license-manager secret from k8s, decode,
+    # parse and push variables to the terminal. examples:
+    #
+    #   TUTOR_LICENSE_MANAGER_MYSQL_DATABASE=webstepwisemathai_prod_lm
+    #   TUTOR_LICENSE_MANAGER_MYSQL_PASSWORD=zQi----secret------T5Q
+    #   TUTOR_LICENSE_MANAGER_MYSQL_USERNAME=webstepwisemathai_prod_lm
+    #   TUTOR_MYSQL_HOST=stepwisemath-global-live.cqkw93ffci2g.us-east-2.rds.amazonaws.com
+    #   TUTOR_MYSQL_PORT=3306
+    # -----------------------------------------------------------------------------
+    - name: fetch MySQL connection parameters from Kubernetes secrets
+      id: get-mysql-connection
+      uses: openedx-actions/tutor-k8s-get-secret@v1.0.0
+      with:
+        eks-namespace: ${{ inputs.namespace }}
+        eks-secret-name: mysql-license-manager
 
-        # -----------------------------------------------------------------------------
-        # retrieve license-manager-oauth secret from k8s, decode,
-        # parse and push variables to the terminal. examples:
-        #
-        #   TUTOR_LICENSE_MANAGER_OAUTH2_KEY=license-manager-key
-        #   TUTOR_LICENSE_MANAGER_OAUTH2_KEY_DEV=license-manager-key-dev
-        #   TUTOR_LICENSE_MANAGER_OAUTH2_KEY_SSO=license-manager-key-sso
-        #   TUTOR_LICENSE_MANAGER_OAUTH2_KEY_SSO_DEV=license-manager-key-sso-dev
-        #   TUTOR_LICENSE_MANAGER_OAUTH2_SECRET=Gfu----secret------FYP
-        #   TUTOR_LICENSE_MANAGER_OAUTH2_SECRET_DEV=jpH----secret------T5Q
-        #   TUTOR_LICENSE_MANAGER_OAUTH2_SECRET_SSO=zmh-----secret-----6sR
-        #   TUTOR_LICENSE_MANAGER_OAUTH2_SECRET_SSO_DEV=IvQ----secret------v7o
-        # -----------------------------------------------------------------------------
-        $(kubectl get secret license-manager-oauth -n stepwisemath-global-prod  -o json | jq  '.data | map_values(@base64d)' |   jq -r 'keys[] as $k | "export TUTOR_\($k|ascii_upcase)=\(.[$k])"')
+    # -----------------------------------------------------------------------------
+    # retrieve license-manager-oauth secret from k8s, decode,
+    # parse and push variables to the terminal. examples:
+    #
+    #   TUTOR_LICENSE_MANAGER_OAUTH2_KEY=license-manager-key
+    #   TUTOR_LICENSE_MANAGER_OAUTH2_KEY_DEV=license-manager-key-dev
+    #   TUTOR_LICENSE_MANAGER_OAUTH2_KEY_SSO=license-manager-key-sso
+    #   TUTOR_LICENSE_MANAGER_OAUTH2_KEY_SSO_DEV=license-manager-key-sso-dev
+    #   TUTOR_LICENSE_MANAGER_OAUTH2_SECRET=Gfu----secret------FYP
+    #   TUTOR_LICENSE_MANAGER_OAUTH2_SECRET_DEV=jpH----secret------T5Q
+    #   TUTOR_LICENSE_MANAGER_OAUTH2_SECRET_SSO=zmh-----secret-----6sR
+    #   TUTOR_LICENSE_MANAGER_OAUTH2_SECRET_SSO_DEV=IvQ----secret------v7o
+    # -----------------------------------------------------------------------------
+    - name: fetch oauth keys and secrets from Kubernetes secrets
+      id: get-oauth-keys
+      uses: openedx-actions/tutor-k8s-get-secret@v1.0.0
+      with:
+        eks-namespace: ${{ inputs.namespace }}
+        eks-secret-name: license-manager-oauth
 
+    - name: Save tutor configuration
+      shell: bash
+      run: |-
         tutor config save --set "LICENSE_MANAGER_DOCKER_IMAGE=${{ inputs.aws-ecr-uri }}" \
                           --set "LICENSE_MANAGER_HOST=${{ inputs.host }}" \
                           --set "LICENSE_MANAGER_LMS_HOST=${{ inputs.lms_host }}" \
