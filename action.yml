@@ -49,7 +49,7 @@ runs:
     # -----------------------------------------------------------------------------
     - name: fetch MySQL connection parameters from Kubernetes secrets
       id: get-mysql-connection
-      uses: openedx-actions/tutor-k8s-get-secret@v1.0.0
+      uses: openedx-actions/tutor-k8s-get-secret@v1
       with:
         eks-namespace: ${{ inputs.namespace }}
         eks-secret-name: mysql-license-manager
@@ -73,7 +73,7 @@ runs:
     # -----------------------------------------------------------------------------
     - name: fetch oauth keys and secrets from Kubernetes secrets
       id: get-oauth-keys
-      uses: openedx-actions/tutor-k8s-get-secret@v1.0.0
+      uses: openedx-actions/tutor-k8s-get-secret@v1
       with:
         eks-namespace: ${{ inputs.namespace }}
         eks-secret-name: license-manager-oauth
